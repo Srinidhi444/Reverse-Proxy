@@ -1,0 +1,31 @@
+
+server:
+  address: ":8080"
+  read_timeout: 10s
+  write_timeout: 30s
+  idle_timeout: 60s
+
+services:
+  user-service:
+    load_balancer: round_robin
+    endpoints:
+      - url: "http://localhost:3001"
+      - url: "http://localhost:3002"
+
+  payment-service:
+    load_balancer: least_connections
+    endpoints:
+      - url: "http://localhost:4001"
+
+routes:
+  - path: "/users"
+    match: prefix
+    service: user-service
+
+  - path: "/users/profile"
+    match: exact
+    service: user-service
+
+  - path: "/payments"
+    match: prefix
+    service: payment-service
