@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/Srinidhi444/Reverse-Proxy/internal/balancer"
 	"github.com/Srinidhi444/Reverse-Proxy/internal/config"
 	"github.com/Srinidhi444/Reverse-Proxy/internal/upstream"
 )
@@ -48,13 +49,20 @@ func Build(cfg *config.Config) (*Runtime, error) {
 
 			service.Endpoints = append(service.Endpoints, endpoint)
 		}
+		var err error
+		service.Balancer, err = buildBalancer(
+			config.BalanceType(serviceConfig.LoadBalancer),
+			service.Endpoints,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("service %q: %w", name, err)
+		}
 
 		rt.Services[name] = service
 	}
 
 	return rt, nil
 }
-
 func newTransport() *http.Transport {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 
@@ -67,5 +75,21 @@ func newTransport() *http.Transport {
 func (rt *Runtime) CloseIdleConnections() {
 	for _, service := range rt.Services {
 		service.Transport.CloseIdleConnections()
+	}
+}
+
+func buildBalancer(
+	strategy config.BalanceType,
+	endpoints []*upstream.Endpoint,
+) (upstream.Balancer, error) {
+	switch strategy {
+	case config.RoundRobin:
+		return balancer.NewRoundRobin(endpoints), nil
+
+	case config.LeastConnections:
+		return nil, fmt.Errorf("least connections balancer is not implemented yet")
+
+	default:
+		return nil, fmt.Errorf("unsupported load balancing strategy: %q", strategy)
 	}
 }
