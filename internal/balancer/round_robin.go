@@ -18,8 +18,7 @@ type RoundRobin struct {
 
 func NewRoundRobin(endpoints []*upstream.Endpoint) *RoundRobin {
 	return &RoundRobin{
-		endpoints:    slices.Clone(endpoints),
-		currentIndex: 0,
+		endpoints: slices.Clone(endpoints),
 	}
 }
 
@@ -31,8 +30,8 @@ func (rr *RoundRobin) Next() (*upstream.Endpoint, error) {
 		return nil, ErrNoEndpoints
 	}
 
-	result := rr.endpoints[rr.currentIndex]
+	endpoint := rr.endpoints[rr.currentIndex]
 	rr.currentIndex = (rr.currentIndex + 1) % len(rr.endpoints)
 
-	return result, nil
+	return endpoint, nil
 }
