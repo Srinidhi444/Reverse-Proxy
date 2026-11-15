@@ -1,4 +1,3 @@
-
 server:
   address: ":8080"
   read_timeout: 10s
@@ -13,7 +12,7 @@ services:
       - url: "http://localhost:3002"
 
   payment-service:
-    load_balancer: least_connections
+    load_balancer: round_robin
     endpoints:
       - url: "http://localhost:4001"
 
