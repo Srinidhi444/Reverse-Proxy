@@ -54,15 +54,28 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	endpoint, err := service.Balancer.Next()
+	if err != nil {
+		s.logger.Error(
+			"failed to select endpoint",
+			"service", service.Name,
+			"error", err,
+		)
+
+		http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	s.logger.Info(
-		"request routed successfully",
+		"endpoint selected",
 		"method", r.Method,
 		"path", r.URL.Path,
 		"service", service.Name,
+		"endpoint", endpoint.ID,
 	)
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = fmt.Fprintf(w, "Matched Service: %s\n", service.Name)
+	_, _ = fmt.Fprintf(w, "Selected Endpoint: %s\n", endpoint.URL)
 }
 
 func (s *Server) Start() error {
