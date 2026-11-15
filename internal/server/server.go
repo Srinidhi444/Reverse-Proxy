@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Srinidhi444/Reverse-Proxy/internal/proxy"
 	"github.com/Srinidhi444/Reverse-Proxy/internal/router"
 )
 
@@ -14,6 +15,7 @@ type Server struct {
 	httpServer *http.Server
 	router     *router.Router
 	logger     *slog.Logger
+	proxy      *proxy.Proxy
 }
 
 func New(
@@ -21,10 +23,12 @@ func New(
 	readTimeout, writeTimeout, idleTimeout time.Duration,
 	router *router.Router,
 	logger *slog.Logger,
+	proxyManager *proxy.Proxy,
 ) *Server {
 	srv := &Server{
 		router: router,
 		logger: logger,
+		proxy:  proxyManager,
 	}
 
 	mux := http.NewServeMux()
@@ -67,15 +71,14 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.logger.Info(
-		"endpoint selected",
+		"forwarding request",
 		"method", r.Method,
 		"path", r.URL.Path,
 		"service", service.Name,
 		"endpoint", endpoint.ID,
 	)
 
-	w.WriteHeader(http.StatusOK)
-	_, _ = fmt.Fprintf(w, "Selected Endpoint: %s\n", endpoint.URL)
+	s.proxy.Forward(w, r, endpoint)
 }
 
 func (s *Server) Start() error {
