@@ -58,8 +58,7 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	endpoint, err := service.Balancer.Acquire()
-	defer service.Balancer.Release(endpoint)
+	lease, err := service.Balancer.Acquire()
 	if err != nil {
 		s.logger.Error(
 			"failed to select endpoint",
@@ -70,6 +69,10 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 		return
 	}
+
+	defer lease.Release()
+
+	endpoint := lease.Endpoint
 
 	s.logger.Info(
 		"forwarding request",

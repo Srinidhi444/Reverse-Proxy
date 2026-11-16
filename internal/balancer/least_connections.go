@@ -21,11 +21,11 @@ func NewLeastConnections(endpoints []*upstream.Endpoint) *LeastConnections {
 	}
 }
 
-func (lc *LeastConnections) Acquire() (*upstream.Endpoint, error) {
+func (lc *LeastConnections) Acquire() (*upstream.Lease, error) {
 	lc.mu.Lock()
-	defer lc.mu.Unlock()
 
 	if len(lc.endpoints) == 0 {
+		lc.mu.Unlock()
 		return nil, ErrNoEndpoints
 	}
 
@@ -50,22 +50,17 @@ func (lc *LeastConnections) Acquire() (*upstream.Endpoint, error) {
 	// Rotate the starting position for the next tie-break.
 	lc.nextIndex = (selectedIndex + 1) % len(lc.endpoints)
 
-	return selectedEndpoint, nil
-}
+	lc.mu.Unlock()
 
-func (lc *LeastConnections) Release(endpoint *upstream.Endpoint) {
-	if endpoint == nil {
-		return
-	}
+	// The lease owns the release operation for this acquisition.
+	lease := upstream.NewLease(selectedEndpoint, func() {
+		lc.mu.Lock()
+		defer lc.mu.Unlock()
 
-	lc.mu.Lock()
-	defer lc.mu.Unlock()
+		if lc.activeRequests[selectedEndpoint.ID] > 0 {
+			lc.activeRequests[selectedEndpoint.ID]--
+		}
+	})
 
-	if _, exists := lc.activeRequests[endpoint.ID]; !exists {
-		return
-	}
-
-	if lc.activeRequests[endpoint.ID] > 0 {
-		lc.activeRequests[endpoint.ID]--
-	}
+	return lease, nil
 }

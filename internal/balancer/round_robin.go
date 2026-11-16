@@ -22,7 +22,7 @@ func NewRoundRobin(endpoints []*upstream.Endpoint) *RoundRobin {
 	}
 }
 
-func (rr *RoundRobin) Acquire() (*upstream.Endpoint, error) {
+func (rr *RoundRobin) Acquire() (*upstream.Lease, error) {
 	rr.mu.Lock()
 	defer rr.mu.Unlock()
 
@@ -33,9 +33,5 @@ func (rr *RoundRobin) Acquire() (*upstream.Endpoint, error) {
 	endpoint := rr.endpoints[rr.currentIndex]
 	rr.currentIndex = (rr.currentIndex + 1) % len(rr.endpoints)
 
-	return endpoint, nil
-}
-
-func (rr *RoundRobin) Release(endpoint *upstream.Endpoint) {
-	// No action needed for round-robin; endpoints are always available.
+	return upstream.NewLease(endpoint, nil), nil
 }
