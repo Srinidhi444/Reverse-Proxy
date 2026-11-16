@@ -1,5 +1,6 @@
 package upstream
 
 type Balancer interface {
-	Next() (*Endpoint, error)
+	Acquire() (*Endpoint, error)
+	Release(endpoint *Endpoint)
 }

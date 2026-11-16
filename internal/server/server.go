@@ -58,7 +58,8 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	endpoint, err := service.Balancer.Next()
+	endpoint, err := service.Balancer.Acquire()
+	defer service.Balancer.Release(endpoint)
 	if err != nil {
 		s.logger.Error(
 			"failed to select endpoint",
