@@ -6,7 +6,7 @@ server:
 
 services:
   user-service:
-    load_balancer: round_robin
+    load_balancer: least_connections
     endpoints:
       - url: "http://localhost:3001"
       - url: "http://localhost:3002"

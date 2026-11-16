@@ -87,7 +87,7 @@ func buildBalancer(
 		return balancer.NewRoundRobin(endpoints), nil
 
 	case config.LeastConnections:
-		return nil, fmt.Errorf("least connections balancer is not implemented yet")
+		return balancer.NewLeastConnections(endpoints), nil
 
 	default:
 		return nil, fmt.Errorf("unsupported load balancing strategy: %q", strategy)
