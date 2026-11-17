@@ -135,6 +135,9 @@ func (c *Checker) checkEndpoint(
 	ctx context.Context,
 	endpoint *upstream.Endpoint,
 ) {
+	if ctx.Err() != nil {
+		return
+	}
 	if endpoint == nil || endpoint.URL == nil {
 		return
 	}
@@ -161,6 +164,10 @@ func (c *Checker) checkEndpoint(
 
 	resp, err := c.client.Do(req)
 	if err != nil {
+		if ctx.Err() != nil {
+			return
+		}
+
 		c.manager.RecordFailure(endpoint.ID)
 		return
 	}
