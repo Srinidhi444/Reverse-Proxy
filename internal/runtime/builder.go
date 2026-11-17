@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"time"
@@ -115,7 +116,21 @@ func (rt *Runtime) StartHealthChecks(ctx context.Context) error {
 }
 
 func newTransport() *http.Transport {
+	dialer := &net.Dialer{
+		Timeout:   5 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}
+
 	transport := http.DefaultTransport.(*http.Transport).Clone()
+
+	transport.MaxIdleConns = 100
+	transport.MaxIdleConnsPerHost = 20
+	transport.MaxConnsPerHost = 100
+	transport.IdleConnTimeout = 90 * time.Second
+
+	transport.DialContext = dialer.DialContext
+	transport.TLSHandshakeTimeout = 5 * time.Second
+
 	transport.ForceAttemptHTTP2 = false
 
 	return transport
