@@ -45,7 +45,7 @@ func (m *Manager) Register(endpoint *upstream.Endpoint) {
 
 	m.endpoints[endpoint.ID] = endpoint
 	m.states[endpoint.ID] = &HealthState{
-		Status:            Unhealthy,
+		Status:            Unknown,
 		FailureThreshold:  m.failureThreshold,
 		RecoveryThreshold: m.recoveryThreshold,
 	}

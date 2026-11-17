@@ -70,18 +70,20 @@ func NewChecker(
 	}
 }
 
-func (c *Checker) Start(ctx context.Context) {
+func (c *Checker) Start(ctx context.Context, ready chan struct{}) {
 	ticker := time.NewTicker(c.interval)
 	defer ticker.Stop()
 
-	// Perform the initial health check immediately.
+	// Perform the initial health check.
 	c.checkAll(ctx)
+
+	// Signal that every endpoint has received its initial check.
+	close(ready)
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
-
 		case <-ticker.C:
 			c.checkAll(ctx)
 		}
