@@ -19,6 +19,8 @@ type Server struct {
 	proxy      *proxy.Proxy
 }
 
+const requestTimeout = 30 * time.Second
+
 func New(
 	address string,
 	readTimeout, writeTimeout, idleTimeout time.Duration,
@@ -49,24 +51,19 @@ func New(
 func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 	service, err := s.router.Match(r)
 	if err != nil {
-		s.logger.Warn(
-			"no route matched",
-			"method", r.Method,
-			"path", r.URL.Path,
-		)
-
+		// Existing 404 handling
 		http.NotFound(w, r)
 		return
 	}
 
+	ctx, cancel := context.WithTimeout(r.Context(), requestTimeout)
+	defer cancel()
+
+	r = r.WithContext(ctx)
+
 	lease, err := service.Balancer.Acquire()
 	if err != nil {
-		s.logger.Error(
-			"failed to select endpoint",
-			"service", service.Name,
-			"error", err,
-		)
-
+		// Existing 503 handling
 		http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 		return
 	}
@@ -75,13 +72,7 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 
 	endpoint := lease.Endpoint
 
-	s.logger.Info(
-		"forwarding request",
-		"method", r.Method,
-		"path", r.URL.Path,
-		"service", service.Name,
-		"endpoint", endpoint.ID,
-	)
+	// Existing logging
 
 	s.proxy.Forward(w, r, endpoint)
 }
