@@ -127,7 +127,7 @@ func newTransport() *http.Transport {
 	transport.MaxIdleConnsPerHost = 20
 	transport.MaxConnsPerHost = 100
 	transport.IdleConnTimeout = 90 * time.Second
-
+	transport.ResponseHeaderTimeout = 10 * time.Second
 	transport.DialContext = dialer.DialContext
 	transport.TLSHandshakeTimeout = 5 * time.Second
 
